@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist de Apartamentos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#EEF0E6;
+    --paper:#FFFFFF;
+    --ink:#1F2A22;
+    --ink-soft:#5B6459;
+    --line:#DAD9CD;
+    --moss:#3F5B45;
+    --moss-dark:#2C4132;
+    --moss-tint:#E4EAE0;
+    --gold:#B98A2E;
+    --gold-tint:#F3E9D4;
+    --cross:#A9432F;
+    --cross-tint:#F5E4DE;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    line-height:1.5;
+    padding:2.5rem 1.25rem 5rem;
+  }
+  .wrap{max-width:900px;margin:0 auto;}
+
+  header{margin-bottom:2rem;}
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:2rem;
+    margin:0 0 .35rem;
+    letter-spacing:-0.01em;
+  }
+  header p{color:var(--ink-soft); margin:0; font-size:.95rem; max-width:520px;}
+
+  .toolbar{
+    display:flex; gap:.6rem; margin-bottom:1.75rem; flex-wrap:wrap;
+  }
+  button{
+    font-family:inherit;
+    cursor:pointer;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--ink);
+    padding:.55rem 1rem;
+    border-radius:var(--radius);
+    font-size:.9rem;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  button:hover{border-color:var(--moss);}
+  button.primary{background:var(--moss); color:#fff; border-color:var(--moss);}
+  button.primary:hover{background:var(--moss-dark);}
+  button.ghost{background:transparent; border-color:transparent; color:var(--ink-soft); padding:.4rem .6rem;}
+  button.ghost:hover{color:var(--cross); border-color:transparent;}
+  button.small{padding:.3rem .65rem; font-size:.8rem;}
+
+  input[type=text], input[type=number], input[type=url], textarea{
+    font-family:inherit;
+    width:100%;
+    padding:.55rem .7rem;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--paper);
+    color:var(--ink);
+    font-size:.92rem;
+  }
+  input:focus, textarea:focus{outline:none; border-color:var(--moss);}
+  textarea{resize:vertical; min-height:2.4rem;}
+  label{font-size:.78rem; color:var(--ink-soft); display:block; margin-bottom:.25rem;}
+
+  .field{margin-bottom:.9rem;}
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:.9rem;}
+  .grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:.9rem;}
+  @media (max-width:640px){ .grid-4{grid-template-columns:1fr 1fr;} }
+
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:12px;
+    margin-bottom:1.1rem;
+    overflow:hidden;
+  }
+  .card-form{padding:1.25rem;}
+
+  .apt-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:1rem 1.25rem; cursor:pointer; gap:1rem;
+  }
+  .apt-head:hover{background:var(--moss-tint);}
+  .apt-head-left{display:flex; flex-direction:column; gap:.15rem; min-width:0;}
+  .apt-name{font-family:'Fraunces', serif; font-weight:600; font-size:1.1rem;}
+  .apt-meta{font-size:.82rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .apt-price{font-family:'Fraunces', serif; font-size:1.2rem; font-weight:600; color:var(--moss-dark); white-space:nowrap;}
+  .apt-actions{display:flex; align-items:center; gap:.5rem;}
+  .chevron{transition:transform .15s ease; color:var(--ink-soft); font-size:1rem;}
+  .card.open .chevron{transform:rotate(90deg);}
+
+  .apt-body{display:none; border-top:1px solid var(--line); padding:1.25rem;}
+  .card.open .apt-body{display:block;}
+
+  .section-title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.05rem;
+    margin:0 0 .2rem;
+  }
+  .section-sub{font-size:.8rem; color:var(--ink-soft); margin:0 0 .9rem;}
+
+  .cat-block{margin-bottom:1.75rem;}
+  .cat-label{
+    font-size:.75rem; text-transform:none; color:var(--moss-dark);
+    font-weight:600; margin-bottom:.6rem; border-bottom:1px solid var(--line); padding-bottom:.4rem;
+  }
+
+  .check-item{
+    display:flex; gap:.7rem; align-items:flex-start;
+    padding:.55rem 0; border-bottom:1px solid #EFEEE6;
+  }
+  .check-item:last-child{border-bottom:none;}
+  .check-item input[type=checkbox]{
+    margin-top:.2rem; width:18px; height:18px; accent-color:var(--moss); flex-shrink:0; cursor:pointer;
+  }
+  .check-item-main{flex:1; min-width:0;}
+  .check-item-label{font-size:.9rem; margin-bottom:.35rem;}
+  .check-item.checked .check-item-label{color:var(--moss-dark);}
+
+  details.open-section{
+    border:1px solid var(--line); border-radius:10px; margin-bottom:.6rem; overflow:hidden;
+  }
+  details.open-section summary{
+    padding:.7rem 1rem; cursor:pointer; font-weight:500; font-size:.92rem;
+    list-style:none; display:flex; justify-content:space-between; align-items:center;
+    background:#F7F6F0;
+  }
+  details.open-section summary::-webkit-details-marker{display:none;}
+  details.open-section[open] summary{border-bottom:1px solid var(--line);}
+  .open-body{padding:1rem;}
+  .open-q{margin-bottom:.85rem;}
+  .open-q:last-child{margin-bottom:0;}
+  .open-q label{font-size:.83rem; color:var(--ink);}
+
+  .empty{
+    text-align:center; padding:3rem 1rem; color:var(--ink-soft);
+    border:1px dashed var(--line); border-radius:12px; font-size:.92rem;
+  }
+
+  .compare-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--paper);}
+  table.compare{border-collapse:collapse; width:100%; font-size:.85rem;}
+  table.compare th, table.compare td{
+    padding:.6rem .8rem; border-bottom:1px solid #EFEEE6; border-right:1px solid #EFEEE6; text-align:left; vertical-align:top;
+  }
+  table.compare th:first-child, table.compare td:first-child{
+    position:sticky; left:0; background:var(--paper); font-weight:500; color:var(--ink-soft); min-width:200px; z-index:1;
+  }
+  table.compare td:not(:first-child), table.compare th:not(:first-child){min-width:200px;}
+  table.compare tr.row-header td, table.compare tr.row-header th{background:var(--moss-tint); font-weight:600;}
+  table.compare tr.cat-row td{background:#F7F6F0; font-weight:600; font-family:'Fraunces', serif; color:var(--moss-dark);}
+  .mark-ok{color:var(--moss-dark); font-weight:600;}
+  .mark-no{color:var(--cross); font-weight:600;}
+  .mark-dash{color:var(--ink-soft);}
+  .note-txt{color:var(--ink-soft); font-size:.78rem; display:block; margin-top:.15rem;}
+  .link-cell a{color:var(--moss-dark); word-break:break-all;}
+
+  .view-toggle{margin-left:auto;}
+  .status-note{font-size:.8rem; color:var(--ink-soft); margin-top:.4rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Checklist de apartamentos</h1>
+    <p>Guarda cada anúncio que vais visitar com o link e o preço, percorre a checklist por categorias e compara tudo lado a lado no final. Os dados sincronizam automaticamente entre todas as pessoas que abrem este ficheiro.</p>
+  </header>
+
+  <div class="toolbar">
+    <button class="primary" id="btn-add">+ Adicionar apartamento</button>
+    <button id="btn-view-list">Ver lista</button>
+    <button id="btn-view-compare">Ver tabela comparativa</button>
+    <button id="btn-refresh" title="Atualizar com as últimas alterações da outra pessoa">↻ Atualizar</button>
+    <button id="btn-bulk-import" title="Adiciona vários apartamentos de uma vez a partir dos links">+ Importar apartamentos em massa</button>
+  </div>
+
+  <div id="add-form-wrap"></div>
+  <div id="list-view"></div>
+  <div id="compare-view" style="display:none;"></div>
+  <p class="status-note" id="status-note"></p>
+</div>
+
+<script>
+const CHECKLIST_INSIDE = [
+  "Cozinha elétrica",
+  "Espaço aberto fora de casa (pátio / jardim / varanda)",
+  "Duas casas de banho completas (azulejos, chuveiro alto e espaçosas)",
+  "Chão texturizado ou antiderrapante (para animais de estimação)",
+  "Cozinha com muito boa ventilação (janelas grandes ou portas)",
+  "Casa luminosa (sol) e bairro sossegado",
+  "Vizinhos porreiros",
+  "Anexo / espaço coberto ou espaço para construí-lo",
+  "Estacionamento garantido (se não tiver, a menos de 10 metros)",
+  "Água potável (ou boa)"
+];
+
+const CHECKLIST_OUTSIDE = [
+  "Supermercado a menos de 900 metros",
+  "Farmácia a menos de 10 minutos",
+  "Transportes públicos com boa frequência (incluindo noite)",
+  "Lugar para treinar (ginásio / aulas / piscina)",
+  "Acesso a autoestrada"
+];
+
+const OPEN_SECTIONS = [
+  { id:"agua", title:"Água quente / instalações básicas", questions:[
+    "Aquecimento de água: gás, termoelétrico ou cilindro? Se for cilindro, quantos litros e quando foi a última manutenção?",
+    "A casa tem gás natural ou é tudo elétrico?",
+    "Pressão da água — houve queixas ou problemas?",
+    "Estado da instalação elétrica (quadro renovado? algum problema conhecido?)",
+    "Sistema de climatização / aquecimento (AC, radiadores, chão radiante, nenhum)"
+  ]},
+  { id:"janelas", title:"Janelas", questions:[
+    "Material das janelas (alumínio, PVC, madeira)",
+    "São de vidro duplo?"
+  ]},
+  { id:"condominio", title:"Condomínio (despesas e gestão)", questions:[
+    "Quota mensal do condomínio — o que inclui?",
+    "Há dívidas de outros vizinhos ao condomínio?",
+    "Gestão por administradora externa ou pelos próprios vizinhos?",
+    "Obras aprovadas ou previstas em breve (já incluídas na quota ou vão gerar quota extra?)",
+    "É possível ver as últimas atas de reunião?"
+  ]},
+  { id:"estado", title:"Estado físico da habitação", questions:[
+    "Humidades, bolor ou condensação (em que zonas, se existirem?)",
+    "Data e detalhe das últimas obras / reformas realizadas",
+    "Há obras não declaradas ou não legalizadas? (varandas fechadas, marquises, ampliações)",
+    "Certificado energético — que letra tem?"
+  ]},
+  { id:"venda", title:"Contexto da venda", questions:[
+    "Motivo da venda",
+    "Tempo que o imóvel está no mercado",
+    "Há margem de negociação? Já houve propostas anteriores?"
+  ]},
+  { id:"envolvente", title:"Envolvente e orientação", questions:[
+    "Orientação solar (nascente / poente / sul / norte)",
+    "Ruídos, comércio próximo e ambiente geral do bairro"
+  ]}
+];
+
+const SYNC_URL = "https://script.google.com/macros/s/AKfycbwPKc5PNLg6LyDW6zrkGIZ_JaRS42f8uGggNsaDxxXZq8_SHT9pPqJfqfDJ6NhskViJ/exec";
+
+let apartments = [];
+let showAddForm = false;
+let currentView = "list";
+let isSyncing = false;
+
+function uid(){ return "a" + Date.now() + Math.random().toString(16).slice(2,7); }
+
+function normalizeLink(url){
+  if(!url) return "";
+  let clean = url.trim().toLowerCase();
+  clean = clean.split("#")[0].split("?")[0];
+  if(clean.endsWith("/")) clean = clean.slice(0,-1);
+  return clean;
+}
+
+function findDuplicate(link, excludeId){
+  const norm = normalizeLink(link);
+  if(!norm) return null;
+  return apartments.find(a => a.id !== excludeId && normalizeLink(a.link) === norm) || null;
+}
+
+function newApartment(){
+  const inside = {};
+  CHECKLIST_INSIDE.forEach((_,i)=> inside[i] = {checked:false, note:""});
+  const outside = {};
+  CHECKLIST_OUTSIDE.forEach((_,i)=> outside[i] = {checked:false, note:""});
+  const open = {};
+  OPEN_SECTIONS.forEach(sec=>{
+    open[sec.id] = {};
+    sec.questions.forEach((_,i)=> open[sec.id][i] = "");
+  });
+  return {
+    id: uid(),
+    link:"", price:"", rooms:"", area:"", location:"",
+    inside, outside, open,
+    visita: { marcada:"", data:"", hora:"" },
+    gostamos: "",
+    proposta: { enviada:"", valor:"" },
+    createdAt: Date.now(),
+    isOpenCard: true
+  };
+}
+
+function migrateApartment(apt){
+  if(!apt.visita) apt.visita = { marcada:"", data:"", hora:"" };
+  if(apt.visita.marcada === undefined) apt.visita.marcada = "";
+  if(apt.visita.data === undefined) apt.visita.data = "";
+  if(apt.visita.hora === undefined) apt.visita.hora = "";
+  if(apt.gostamos === undefined) apt.gostamos = "";
+  if(!apt.proposta) apt.proposta = { enviada:"", valor:"" };
+  if(apt.proposta.enviada === undefined) apt.proposta.enviada = "";
+  if(apt.proposta.valor === undefined) apt.proposta.valor = "";
+  if(apt.isOpenCard === undefined) apt.isOpenCard = false;
+  return apt;
+}
+
+function setStatus(msg){
+  document.getElementById("status-note").textContent = msg || "";
+}
+
+function isTyping(){
+  const el = document.activeElement;
+  return el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA");
+}
+
+async function loadData(silent){
+  if(!silent){ isSyncing = true; setStatus("A sincronizar…"); }
+  try{
+    const res = await fetch(SYNC_URL, { method:"GET", cache:"no-store" });
+    if(!res.ok) throw new Error("bad status");
+    const text = await res.text();
+    const parsed = text ? JSON.parse(text) : [];
+    apartments = (Array.isArray(parsed) ? parsed : []).map(migrateApartment);
+    setStatus("");
+  }catch(e){
+    setStatus("Não foi possível ligar à folha partilhada. Verifica a ligação à internet e tenta novamente.");
+  }
+  isSyncing = false;
+  render();
+}
+
+async function saveData(){
+  setStatus("A guardar…");
+  try{
+    const res = await fetch(SYNC_URL, {
+      method:"POST",
+      headers: { "Content-Type":"text/plain;charset=utf-8" },
+      body: JSON.stringify(apartments)
+    });
+    if(!res.ok) throw new Error("bad status");
+    setStatus("");
+  }catch(e){
+    setStatus("Não foi possível guardar. As tuas últimas alterações podem não ter sido partilhadas — tenta novamente.");
+  }
+}
+
+function escapeHtml(str){
+  return (str||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function truncate(str, n){
+  if(!str) return "";
+  return str.length > n ? str.slice(0,n-1) + "…" : str;
+}
+
+function render(){
+  renderAddForm();
+  if(currentView === "list"){
+    document.getElementById("list-view").style.display = "";
+    document.getElementById("compare-view").style.display = "none";
+    renderList();
+  } else {
+    document.getElementById("list-view").style.display = "none";
+    document.getElementById("compare-view").style.display = "";
+    renderCompare();
+  }
+}
+
+function renderAddForm(){
+  const wrap = document.getElementById("add-form-wrap");
+  if(!showAddForm){ wrap.innerHTML = ""; return; }
+  wrap.innerHTML = `
+    <div class="card card-form">
+      <p class="section-title" style="margin-bottom:1rem;">Novo apartamento</p>
+      <div class="field">
+        <label for="f-link">Link do anúncio</label>
+        <input type="url" id="f-link" placeholder="https://...">
+        <p id="f-link-msg" style="color:var(--cross); font-size:.78rem; margin:.35rem 0 0; display:none;"></p>
+      </div>
+      <div class="grid-4">
+        <div class="field"><label for="f-price">Preço</label><input type="text" id="f-price" placeholder="250 000 €"></div>
+        <div class="field"><label for="f-rooms">Quartos (T)</label><input type="text" id="f-rooms" placeholder="T2"></div>
+        <div class="field"><label for="f-area">Área (m²)</label><input type="text" id="f-area" placeholder="85"></div>
+        <div class="field"><label for="f-location">Localização</label><input type="text" id="f-location" placeholder="Bairro, cidade"></div>
+      </div>
+      <div style="display:flex; gap:.6rem; margin-top:.5rem;">
+        <button class="primary" id="f-save">Guardar apartamento</button>
+        <button id="f-cancel">Cancelar</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("f-save").onclick = async ()=>{
+    const link = document.getElementById("f-link").value.trim();
+    const msgEl = document.getElementById("f-link-msg");
+    msgEl.style.display = "none";
+    if(!link){
+      document.getElementById("f-link").style.borderColor = "var(--cross)";
+      msgEl.textContent = "Introduz o link do anúncio.";
+      msgEl.style.display = "block";
+      return;
+    }
+    const dup = findDuplicate(link);
+    if(dup){
+      document.getElementById("f-link").style.borderColor = "var(--cross)";
+      msgEl.textContent = `Este link já foi adicionado (${apartmentTitle(dup)}). Abre esse cartão na lista em vez de duplicar.`;
+      msgEl.style.display = "block";
+      return;
+    }
+    document.getElementById("f-link").style.borderColor = "";
+    const apt = newApartment();
+    apt.link = link;
+    apt.price = document.getElementById("f-price").value.trim();
+    apt.rooms = document.getElementById("f-rooms").value.trim();
+    apt.area = document.getElementById("f-area").value.trim();
+    apt.location = document.getElementById("f-location").value.trim();
+    apartments.unshift(apt);
+    showAddForm = false;
+    await saveData();
+    render();
+  };
+  document.getElementById("f-cancel").onclick = ()=>{ showAddForm=false; render(); };
+}
+
+function renderList(){
+  const el = document.getElementById("list-view");
+  if(apartments.length === 0){
+    el.innerHTML = `<div class="empty">Ainda não adicionaste nenhum apartamento.<br>Usa "Adicionar apartamento" para começar.</div>`;
+    return;
+  }
+  el.innerHTML = apartments.map(apt => renderCard(apt)).join("");
+  apartments.forEach(apt => attachCardHandlers(apt));
+}
+
+function apartmentTitle(apt){
+  const bits = [];
+  if(apt.rooms) bits.push(apt.rooms);
+  if(apt.area) bits.push(apt.area + " m²");
+  if(apt.location) bits.push(apt.location);
+  return bits.length ? bits.join(" · ") : "Apartamento sem detalhes";
+}
+
+function renderCard(apt){
+  return `
+  <div class="card ${apt.isOpenCard ? "open" : ""}" data-id="${apt.id}">
+    <div class="apt-head" data-toggle="${apt.id}">
+      <div class="apt-head-left">
+        <span class="apt-name">${escapeHtml(apartmentTitle(apt))}</span>
+        <span class="apt-meta">${apt.link ? escapeHtml(apt.link) : "Sem link"}</span>
+      </div>
+      <div class="apt-actions">
+        <span class="apt-price">${apt.price ? escapeHtml(apt.price) : "—"}</span>
+        <button class="ghost small" data-del="${apt.id}" aria-label="Eliminar apartamento">Eliminar</button>
+        <span class="chevron">›</span>
+      </div>
+    </div>
+    <div class="apt-body">
+      ${renderCardBody(apt)}
+    </div>
+  </div>`;
+}
+
+function renderCardBody(apt){
+  return `
+    <div class="field-block" style="margin-bottom:1.5rem;">
+      <div class="grid-2">
+        <div class="field"><label>Link do anúncio</label><input type="url" data-field="link" value="${escapeHtml(apt.link)}"></div>
+        <div class="field"><label>Preço</label><input type="text" data-field="price" value="${escapeHtml(apt.price)}"></div>
+      </div>
+      <div class="grid-4">
+        <div class="field"><label>Quartos (T)</label><input type="text" data-field="rooms" value="${escapeHtml(apt.rooms)}"></div>
+        <div class="field"><label>Área (m²)</label><input type="text" data-field="area" value="${escapeHtml(apt.area)}"></div>
+        <div class="field" style="grid-column:span 2;"><label>Localização</label><input type="text" data-field="location" value="${escapeHtml(apt.location)}"></div>
+      </div>
+    </div>
+
+    <div class="cat-block">
+      <p class="section-title">Checklist</p>
+      <p class="section-sub">Marca cada ponto e acrescenta uma nota se precisares.</p>
+      <div class="cat-label">Dentro de casa</div>
+      ${CHECKLIST_INSIDE.map((label,i)=>renderCheckItem(apt,"inside",i,label)).join("")}
+      <div class="cat-label" style="margin-top:1.2rem;">Fora de casa</div>
+      ${CHECKLIST_OUTSIDE.map((label,i)=>renderCheckItem(apt,"outside",i,label)).join("")}
+    </div>
+
+    <div class="cat-block">
+      <p class="section-title">Visita e proposta</p>
+      <p class="section-sub">Acompanha o processo desta candidatura.</p>
+      <div class="grid-2">
+        <div class="field">
+          <label>Visita marcada?</label>
+          <select data-visita-marcada>
+            <option value="" ${apt.visita.marcada===""?"selected":""}>—</option>
+            <option value="sim" ${apt.visita.marcada==="sim"?"selected":""}>Sim</option>
+            <option value="nao" ${apt.visita.marcada==="nao"?"selected":""}>Não</option>
+          </select>
+        </div>
+        <div class="field" data-visita-datetime-wrap style="${apt.visita.marcada==="sim" ? "" : "display:none;"}">
+          <label>Data e hora da visita</label>
+          <div style="display:flex; gap:.5rem;">
+            <input type="date" data-visita-data value="${escapeHtml(apt.visita.data)}">
+            <input type="time" data-visita-hora value="${escapeHtml(apt.visita.hora)}">
+          </div>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:.9rem;">
+        <div class="field">
+          <label>Gostámos depois da visita?</label>
+          <select data-gostamos>
+            <option value="" ${apt.gostamos===""?"selected":""}>—</option>
+            <option value="sim" ${apt.gostamos==="sim"?"selected":""}>Sim</option>
+            <option value="nao" ${apt.gostamos==="nao"?"selected":""}>Não</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Proposta enviada?</label>
+          <select data-proposta-enviada>
+            <option value="" ${apt.proposta.enviada===""?"selected":""}>—</option>
+            <option value="sim" ${apt.proposta.enviada==="sim"?"selected":""}>Sim</option>
+            <option value="nao" ${apt.proposta.enviada==="nao"?"selected":""}>Não</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" data-proposta-valor-wrap style="margin-top:.9rem; ${apt.proposta.enviada==="sim" ? "" : "display:none;"}">
+        <label>Valor da proposta</label>
+        <input type="text" data-proposta-valor placeholder="Ex: 255 000 €" value="${escapeHtml(apt.proposta.valor)}">
+      </div>
+    </div>
+
+    <div class="cat-block">
+      <p class="section-title">Perguntas abertas</p>
+      <p class="section-sub">Para perguntar ao proprietário ou à agência.</p>
+      ${OPEN_SECTIONS.map(sec=>renderOpenSection(apt,sec)).join("")}
+    </div>
+  `;
+}
+
+function renderCheckItem(apt, group, i, label){
+  const item = apt[group][i];
+  return `
+    <div class="check-item ${item.checked ? "checked":""}">
+      <input type="checkbox" data-check="${group}:${i}" ${item.checked ? "checked":""}>
+      <div class="check-item-main">
+        <div class="check-item-label">${escapeHtml(label)}</div>
+        <input type="text" placeholder="Nota (opcional)" data-note="${group}:${i}" value="${escapeHtml(item.note)}">
+      </div>
+    </div>
+  `;
+}
+
+function renderOpenSection(apt, sec){
+  return `
+    <details class="open-section">
+      <summary>${escapeHtml(sec.title)} <span class="chevron">›</span></summary>
+      <div class="open-body">
+        ${sec.questions.map((q,i)=>`
+          <div class="open-q">
+            <label>${escapeHtml(q)}</label>
+            <textarea data-open="${sec.id}:${i}" placeholder="Resposta...">${escapeHtml(apt.open[sec.id][i])}</textarea>
+          </div>
+        `).join("")}
+      </div>
+    </details>
+  `;
+}
+
+function attachCardHandlers(apt){
+  const cardEl = document.querySelector(`.card[data-id="${apt.id}"]`);
+  if(!cardEl) return;
+
+  cardEl.querySelector(`[data-toggle]`).addEventListener("click", (e)=>{
+    if(e.target.closest("[data-del]")) return;
+    apt.isOpenCard = !apt.isOpenCard;
+    render();
+  });
+
+  cardEl.querySelector(`[data-del]`).addEventListener("click", async (e)=>{
+    e.stopPropagation();
+    apartments = apartments.filter(a=>a.id !== apt.id);
+    await saveData();
+    render();
+  });
+
+  cardEl.querySelectorAll(`[data-field]`).forEach(inp=>{
+    inp.addEventListener("click", e=>e.stopPropagation());
+    inp.addEventListener("change", async ()=>{
+      if(inp.dataset.field === "link"){
+        const newLink = inp.value.trim();
+        const dup = findDuplicate(newLink, apt.id);
+        if(dup){
+          setStatus(`Este link já pertence a outro apartamento (${apartmentTitle(dup)}). Não foi guardado.`);
+          inp.value = apt.link;
+          return;
+        }
+      }
+      apt[inp.dataset.field] = inp.value.trim();
+      await saveData();
+      renderCompareIfActive();
+      const head = cardEl.querySelector(".apt-name");
+      if(head) head.textContent = apartmentTitle(apt);
+      const price = cardEl.querySelector(".apt-price");
+      if(price) price.textContent = apt.price || "—";
+      const meta = cardEl.querySelector(".apt-meta");
+      if(meta) meta.textContent = apt.link || "Sem link";
+    });
+  });
+
+  cardEl.querySelectorAll(`[data-check]`).forEach(chk=>{
+    chk.addEventListener("click", e=>e.stopPropagation());
+    chk.addEventListener("change", async ()=>{
+      const [group,i] = chk.dataset.check.split(":");
+      apt[group][i].checked = chk.checked;
+      chk.closest(".check-item").classList.toggle("checked", chk.checked);
+      await saveData();
+    });
+  });
+
+  cardEl.querySelectorAll(`[data-note]`).forEach(inp=>{
+    inp.addEventListener("click", e=>e.stopPropagation());
+    inp.addEventListener("change", async ()=>{
+      const [group,i] = inp.dataset.note.split(":");
+      apt[group][i].note = inp.value;
+      await saveData();
+    });
+  });
+
+  cardEl.querySelectorAll(`[data-open]`).forEach(ta=>{
+    ta.addEventListener("click", e=>e.stopPropagation());
+    ta.addEventListener("change", async ()=>{
+      const [secId,i] = ta.dataset.open.split(":");
+      apt.open[secId][i] = ta.value;
+      await saveData();
+    });
+  });
+
+  cardEl.querySelectorAll("details.open-section").forEach(d=>{
+    d.querySelector("summary").addEventListener("click", e=>e.stopPropagation());
+  });
+
+  const visitaSelect = cardEl.querySelector(`[data-visita-marcada]`);
+  const visitaWrap = cardEl.querySelector(`[data-visita-datetime-wrap]`);
+  if(visitaSelect){
+    visitaSelect.addEventListener("click", e=>e.stopPropagation());
+    visitaSelect.addEventListener("change", async ()=>{
+      apt.visita.marcada = visitaSelect.value;
+      visitaWrap.style.display = visitaSelect.value === "sim" ? "" : "none";
+      await saveData();
+      renderCompareIfActive();
+    });
+  }
+
+  const visitaData = cardEl.querySelector(`[data-visita-data]`);
+  if(visitaData){
+    visitaData.addEventListener("click", e=>e.stopPropagation());
+    visitaData.addEventListener("change", async ()=>{
+      apt.visita.data = visitaData.value;
+      await saveData();
+      renderCompareIfActive();
+    });
+  }
+
+  const visitaHora = cardEl.querySelector(`[data-visita-hora]`);
+  if(visitaHora){
+    visitaHora.addEventListener("click", e=>e.stopPropagation());
+    visitaHora.addEventListener("change", async ()=>{
+      apt.visita.hora = visitaHora.value;
+      await saveData();
+      renderCompareIfActive();
+    });
+  }
+
+  const gostamosSelect = cardEl.querySelector(`[data-gostamos]`);
+  if(gostamosSelect){
+    gostamosSelect.addEventListener("click", e=>e.stopPropagation());
+    gostamosSelect.addEventListener("change", async ()=>{
+      apt.gostamos = gostamosSelect.value;
+      await saveData();
+      renderCompareIfActive();
+    });
+  }
+
+  const propostaSelect = cardEl.querySelector(`[data-proposta-enviada]`);
+  const propostaValorWrap = cardEl.querySelector(`[data-proposta-valor-wrap]`);
+  if(propostaSelect){
+    propostaSelect.addEventListener("click", e=>e.stopPropagation());
+    propostaSelect.addEventListener("change", async ()=>{
+      apt.proposta.enviada = propostaSelect.value;
+      propostaValorWrap.style.display = propostaSelect.value === "sim" ? "" : "none";
+      await saveData();
+      renderCompareIfActive();
+    });
+  }
+
+  const propostaValor = cardEl.querySelector(`[data-proposta-valor]`);
+  if(propostaValor){
+    propostaValor.addEventListener("click", e=>e.stopPropagation());
+    propostaValor.addEventListener("change", async ()=>{
+      apt.proposta.valor = propostaValor.value;
+      await saveData();
+      renderCompareIfActive();
+    });
+  }
+}
+
+function renderCompareIfActive(){
+  if(currentView === "compare") renderCompare();
+}
+
+function renderCompare(){
+  const el = document.getElementById("compare-view");
+  if(apartments.length === 0){
+    el.innerHTML = `<div class="empty">Adiciona pelo menos um apartamento para veres a comparação.</div>`;
+    return;
+  }
+
+  const cols = apartments;
+  const headCells = cols.map(a => `<th class="link-cell">${a.link ? `<a href="${escapeHtml(a.link)}" target="_blank" rel="noopener">${escapeHtml(truncate(a.link,40))}</a>` : "Sem link"}</th>`).join("");
+
+  function infoRow(label, fn){
+    return `<tr><td>${label}</td>${cols.map(a=>`<td>${escapeHtml(fn(a) || "—")}</td>`).join("")}</tr>`;
+  }
+
+  function checkRows(group, list){
+    return list.map((label,i)=>{
+      const cells = cols.map(a=>{
+        const item = a[group][i];
+        const mark = item.checked ? `<span class="mark-ok">✓ Sim</span>` : `<span class="mark-no">✗ Não</span>`;
+        const note = item.note ? `<span class="note-txt">${escapeHtml(item.note)}</span>` : "";
+        return `<td>${mark}${note}</td>`;
+      }).join("");
+      return `<tr><td>${escapeHtml(label)}</td>${cells}</tr>`;
+    }).join("");
+  }
+
+  function openRows(){
+    return OPEN_SECTIONS.map(sec=>{
+      const catRow = `<tr class="cat-row"><td>${escapeHtml(sec.title)}</td>${cols.map(()=>"<td></td>").join("")}</tr>`;
+      const qRows = sec.questions.map((q,i)=>{
+        const cells = cols.map(a=>{
+          const val = a.open[sec.id][i];
+          return `<td>${val ? escapeHtml(val) : `<span class="mark-dash">—</span>`}</td>`;
+        }).join("");
+        return `<tr><td>${escapeHtml(q)}</td>${cells}</tr>`;
+      }).join("");
+      return catRow + qRows;
+    }).join("");
+  }
+
+  function visitaLabel(a){
+    if(a.visita.marcada !== "sim") return a.visita.marcada === "nao" ? "Não" : "—";
+    const dt = [a.visita.data, a.visita.hora].filter(Boolean).join(" ");
+    return "Sim" + (dt ? ` (${dt})` : "");
+  }
+
+  function propostaLabel(a){
+    if(a.proposta.enviada !== "sim") return a.proposta.enviada === "nao" ? "Não" : "—";
+    return "Sim" + (a.proposta.valor ? ` — ${a.proposta.valor}` : "");
+  }
+
+  el.innerHTML = `
+    <div class="compare-wrap">
+      <table class="compare">
+        <thead>
+          <tr class="row-header"><th>Anúncio</th>${headCells}</tr>
+        </thead>
+        <tbody>
+          ${infoRow("Quartos", a=>a.rooms)}
+          ${infoRow("Área (m²)", a=>a.area)}
+          ${infoRow("Localização", a=>a.location)}
+          ${infoRow("Preço", a=>a.price)}
+          ${infoRow("Visita marcada", visitaLabel)}
+          ${infoRow("Gostámos depois da visita", a=> a.gostamos==="sim"?"Sim":(a.gostamos==="nao"?"Não":"—"))}
+          ${infoRow("Proposta enviada", propostaLabel)}
+          <tr class="cat-row"><td>Dentro de casa</td>${cols.map(()=>"<td></td>").join("")}</tr>
+          ${checkRows("inside", CHECKLIST_INSIDE)}
+          <tr class="cat-row"><td>Fora de casa</td>${cols.map(()=>"<td></td>").join("")}</tr>
+          ${checkRows("outside", CHECKLIST_OUTSIDE)}
+          ${openRows()}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+document.getElementById("btn-add").addEventListener("click", ()=>{
+  showAddForm = !showAddForm;
+  render();
+});
+document.getElementById("btn-view-list").addEventListener("click", ()=>{
+  currentView = "list"; render();
+});
+document.getElementById("btn-view-compare").addEventListener("click", ()=>{
+  currentView = "compare"; render();
+});
+
+document.getElementById("btn-refresh").addEventListener("click", ()=> loadData(false));
+
+const BULK_IMPORT_DATA = [
+  { link:"https://century21.pt/ref/C0393-01387", price:"295 000 €", rooms:"T3", area:"93 m²", location:"S. Pedro da Cova, Gondomar" },
+  { link:"https://www.idealista.pt/imovel/34996073/", price:"260 000 €", rooms:"T3", area:"99 m²", location:"Circunvalação - Parque Nascente, Rio Tinto, Gondomar" },
+  { link:"https://www.idealista.pt/imovel/35259592/", price:"299 000 €", rooms:"T3", area:"150 m²", location:"Centro, Valongo" },
+  { link:"https://www.idealista.pt/imovel/35044248/", price:"269 900 €", rooms:"T3", area:"196 m²", location:"Baguim do Monte, Gondomar" },
+  { link:"https://www.idealista.pt/imovel/35192130/", price:"280 000 €", rooms:"T3", area:"140 m²", location:"Centro de Fânzeres, Gondomar" },
+  { link:"https://www.imovirtual.com/pt/anuncio/moradia-t4-para-venda-ID1in5r", price:"271 900 €", rooms:"T4", area:"156 m²", location:"Canidelo, Vila Nova de Gaia" },
+  { link:"https://www.imovirtual.com/pt/anuncio/apartamento-de-grande-dimensao-com-sotao-habitavel-ID1iGoa", price:"265 000 €", rooms:"T2", area:"170 m²", location:"Centro, Oliveira do Douro, Vila Nova de Gaia" },
+  { link:"https://www.imovirtual.com/pt/anuncio/apartamento-t3-para-venda-ID1imxE", price:"299 000 €", rooms:"T3", area:"104 m²", location:"Ermesinde, Valongo" },
+  { link:"https://www.imovirtual.com/pt/anuncio/apartamento-t3-rio-tinto-ID1itB1", price:"275 000 €", rooms:"T3", area:"108 m²", location:"Fânzeres, Gondomar" },
+  { link:"https://www.idealista.pt/imovel/35297189/", price:"240 000 €", rooms:"T3", area:"75 m²", location:"Corujeira - Bonjóia, Campanhã, Porto" }
+];
+
+document.getElementById("btn-bulk-import").addEventListener("click", async ()=>{
+  let added = 0, skipped = 0;
+  BULK_IMPORT_DATA.forEach(data=>{
+    if(findDuplicate(data.link)){
+      skipped++;
+      return;
+    }
+    const apt = newApartment();
+    apt.link = data.link;
+    apt.price = data.price;
+    apt.rooms = data.rooms;
+    apt.area = data.area;
+    apt.location = data.location;
+    apt.isOpenCard = false;
+    apartments.push(apt);
+    added++;
+  });
+  await saveData();
+  render();
+  setStatus(`${added} apartamento(s) adicionado(s)${skipped ? `, ${skipped} já existiam e foram ignorados` : ""}.`);
+});
+
+window.addEventListener("focus", ()=>{
+  if(!isTyping()) loadData(true);
+});
+
+setInterval(()=>{
+  if(!isTyping() && !isSyncing) loadData(true);
+}, 20000);
+
+loadData();
+</script>
+</body>
+</html>
