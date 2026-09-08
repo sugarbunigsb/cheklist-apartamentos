@@ -64,6 +64,17 @@
   button.ghost:hover{color:var(--cross); border-color:transparent;}
   button.small{padding:.3rem .65rem; font-size:.8rem;}
 
+  select#sort-select{
+    font-family:inherit;
+    padding:.55rem .7rem;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--paper);
+    color:var(--ink);
+    font-size:.9rem;
+    cursor:pointer;
+  }
+
   input[type=text], input[type=number], input[type=url], textarea{
     font-family:inherit;
     width:100%;
@@ -104,6 +115,12 @@
   .apt-actions{display:flex; align-items:center; gap:.5rem;}
   .chevron{transition:transform .15s ease; color:var(--ink-soft); font-size:1rem;}
   .card.open .chevron{transform:rotate(90deg);}
+  .card.dragging{opacity:.4;}
+  .drag-handle{
+    cursor:grab; color:var(--ink-soft); font-size:1rem; padding:0 .2rem; flex-shrink:0;
+    user-select:none;
+  }
+  .drag-handle:active{cursor:grabbing;}
 
   .apt-body{display:none; border-top:1px solid var(--line); padding:1.25rem;}
   .card.open .apt-body{display:block;}
@@ -188,6 +205,13 @@
     <button id="btn-view-compare">Ver tabela comparativa</button>
     <button id="btn-refresh" title="Atualizar com as últimas alterações da outra pessoa">↻ Atualizar</button>
     <button id="btn-bulk-import" title="Adiciona vários apartamentos de uma vez a partir dos links">+ Importar apartamentos em massa</button>
+    <select id="sort-select" title="Ordenar lista">
+      <option value="manual">Ordem manual (arrastar)</option>
+      <option value="recent">Adicionado recentemente</option>
+      <option value="oldest">Mais antigo</option>
+      <option value="visita">Visita marcada primeiro</option>
+      <option value="proposta">Proposta enviada primeiro</option>
+    </select>
   </div>
 
   <div id="add-form-wrap"></div>
@@ -260,8 +284,14 @@ let apartments = [];
 let showAddForm = false;
 let currentView = "list";
 let isSyncing = false;
+let sortMode = "manual";
+let draggedId = null;
 
 function uid(){ return "a" + Date.now() + Math.random().toString(16).slice(2,7); }
+
+function nextOrder(){
+  return apartments.reduce((max,a)=> Math.max(max, (a.order || 0)), 0) + 1;
+}
 
 function normalizeLink(url){
   if(!url) return "";
@@ -329,6 +359,7 @@ async function loadData(silent){
     const text = await res.text();
     const parsed = text ? JSON.parse(text) : [];
     apartments = (Array.isArray(parsed) ? parsed : []).map(migrateApartment);
+    apartments.forEach((a,i)=>{ if(a.order === undefined || a.order === null) a.order = i; });
     setStatus("");
   }catch(e){
     setStatus("Não foi possível ligar à folha partilhada. Verifica a ligação à internet e tenta novamente.");
@@ -421,12 +452,23 @@ function renderAddForm(){
     apt.rooms = document.getElementById("f-rooms").value.trim();
     apt.area = document.getElementById("f-area").value.trim();
     apt.location = document.getElementById("f-location").value.trim();
-    apartments.unshift(apt);
+    apt.order = nextOrder();
+    apartments.push(apt);
     showAddForm = false;
     await saveData();
     render();
   };
   document.getElementById("f-cancel").onclick = ()=>{ showAddForm=false; render(); };
+}
+
+function sortedApartments(){
+  const list = [...apartments];
+  if(sortMode === "recent") list.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
+  else if(sortMode === "oldest") list.sort((a,b)=> (a.createdAt||0) - (b.createdAt||0));
+  else if(sortMode === "visita") list.sort((a,b)=> (b.visita.marcada==="sim") - (a.visita.marcada==="sim"));
+  else if(sortMode === "proposta") list.sort((a,b)=> (b.proposta.enviada==="sim") - (a.proposta.enviada==="sim"));
+  else list.sort((a,b)=> (a.order||0) - (b.order||0));
+  return list;
 }
 
 function renderList(){
@@ -435,8 +477,9 @@ function renderList(){
     el.innerHTML = `<div class="empty">Ainda não adicionaste nenhum apartamento.<br>Usa "Adicionar apartamento" para começar.</div>`;
     return;
   }
-  el.innerHTML = apartments.map(apt => renderCard(apt)).join("");
-  apartments.forEach(apt => attachCardHandlers(apt));
+  const list = sortedApartments();
+  el.innerHTML = list.map(apt => renderCard(apt)).join("");
+  list.forEach(apt => attachCardHandlers(apt));
 }
 
 function apartmentTitle(apt){
@@ -448,9 +491,11 @@ function apartmentTitle(apt){
 }
 
 function renderCard(apt){
+  const draggable = sortMode === "manual";
   return `
-  <div class="card ${apt.isOpenCard ? "open" : ""}" data-id="${apt.id}">
+  <div class="card ${apt.isOpenCard ? "open" : ""}" data-id="${apt.id}" ${draggable ? 'draggable="true"' : ""}>
     <div class="apt-head" data-toggle="${apt.id}">
+      ${draggable ? `<span class="drag-handle" title="Arrastar para reordenar">☰</span>` : ""}
       <div class="apt-head-left">
         <span class="apt-name">${escapeHtml(apartmentTitle(apt))}</span>
         <span class="apt-meta">${apt.link ? escapeHtml(apt.link) : "Sem link"}</span>
@@ -575,8 +620,38 @@ function attachCardHandlers(apt){
   const cardEl = document.querySelector(`.card[data-id="${apt.id}"]`);
   if(!cardEl) return;
 
+  if(sortMode === "manual"){
+    cardEl.addEventListener("dragstart", (e)=>{
+      draggedId = apt.id;
+      cardEl.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", apt.id);
+    });
+    cardEl.addEventListener("dragend", ()=>{
+      cardEl.classList.remove("dragging");
+      draggedId = null;
+    });
+    cardEl.addEventListener("dragover", (e)=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    });
+    cardEl.addEventListener("drop", async (e)=>{
+      e.preventDefault();
+      const sourceId = draggedId || e.dataTransfer.getData("text/plain");
+      if(!sourceId || sourceId === apt.id) return;
+      const fromIndex = apartments.findIndex(a=>a.id === sourceId);
+      const toIndex = apartments.findIndex(a=>a.id === apt.id);
+      if(fromIndex === -1 || toIndex === -1) return;
+      const [moved] = apartments.splice(fromIndex, 1);
+      apartments.splice(toIndex, 0, moved);
+      apartments.forEach((a,i)=>{ a.order = i; });
+      await saveData();
+      render();
+    });
+  }
+
   cardEl.querySelector(`[data-toggle]`).addEventListener("click", (e)=>{
-    if(e.target.closest("[data-del]")) return;
+    if(e.target.closest("[data-del]") || e.target.closest(".drag-handle")) return;
     apt.isOpenCard = !apt.isOpenCard;
     render();
   });
@@ -802,6 +877,11 @@ document.getElementById("btn-view-compare").addEventListener("click", ()=>{
 
 document.getElementById("btn-refresh").addEventListener("click", ()=> loadData(false));
 
+document.getElementById("sort-select").addEventListener("change", (e)=>{
+  sortMode = e.target.value;
+  render();
+});
+
 const BULK_IMPORT_DATA = [
   { link:"https://century21.pt/ref/C0393-01387", price:"295 000 €", rooms:"T3", area:"93 m²", location:"S. Pedro da Cova, Gondomar" },
   { link:"https://www.idealista.pt/imovel/34996073/", price:"260 000 €", rooms:"T3", area:"99 m²", location:"Circunvalação - Parque Nascente, Rio Tinto, Gondomar" },
@@ -829,6 +909,7 @@ document.getElementById("btn-bulk-import").addEventListener("click", async ()=>{
     apt.area = data.area;
     apt.location = data.location;
     apt.isOpenCard = false;
+    apt.order = nextOrder();
     apartments.push(apt);
     added++;
   });
